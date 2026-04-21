@@ -12,12 +12,22 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 const apiRouter = require('./api/routes');
 const { startScheduler, runJob } = require('./jobs/dailyReportJob');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Rate limiter for the static dashboard route
+const dashboardLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests – please try again later.',
+});
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -30,7 +40,7 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 app.use('/api', apiRouter);
 
 // ── Root: serve dashboard ─────────────────────────────────────────────────────
-app.get('/', (req, res) => {
+app.get('/', dashboardLimiter, (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 

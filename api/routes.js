@@ -11,21 +11,50 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 
 const { runJob } = require('../jobs/dailyReportJob');
+
+// ── Rate limiters ─────────────────────────────────────────────────────────────
+// General read endpoints: 60 requests per minute per IP
+const readLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests – please try again later.' },
+});
+
+// Report download: 10 requests per minute per IP (file I/O intensive)
+const downloadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many download requests – please try again later.' },
+});
+
+// Manual run: 5 requests per minute per IP (expensive operation)
+const runLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many run requests – please try again later.' },
+});
 
 const router = express.Router();
 const REPORTS_DIR = path.join(__dirname, '..', 'reports');
 const HISTORY_DIR = path.join(__dirname, '..', 'data', 'history');
 
 // ── GET /api/status ───────────────────────────────────────────────────────────
-router.get('/status', (req, res) => {
+router.get('/status', readLimiter, (req, res) => {
   const { isRunning } = require('../jobs/dailyReportJob');
   res.json({ status: isRunning() ? 'running' : 'idle', timestamp: new Date().toISOString() });
 });
 
 // ── POST /api/run ─────────────────────────────────────────────────────────────
-router.post('/run', async (req, res) => {
+router.post('/run', runLimiter, async (req, res) => {
   try {
     const result = await runJob();
     if (!result) {
@@ -44,7 +73,7 @@ router.post('/run', async (req, res) => {
 });
 
 // ── GET /api/results ──────────────────────────────────────────────────────────
-router.get('/results', (req, res) => {
+router.get('/results', readLimiter, (req, res) => {
   if (!fs.existsSync(HISTORY_DIR)) {
     return res.json({ results: [], message: 'No scan history found.' });
   }
@@ -74,7 +103,7 @@ router.get('/results', (req, res) => {
 });
 
 // ── GET /api/report ───────────────────────────────────────────────────────────
-router.get('/report', (req, res) => {
+router.get('/report', downloadLimiter, (req, res) => {
   if (!fs.existsSync(REPORTS_DIR)) {
     return res.status(404).json({ error: 'No reports found.' });
   }
