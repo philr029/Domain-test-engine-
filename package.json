@@ -1,0 +1,31 @@
+{
+  "name": "domain-blacklist-monitor",
+  "version": "1.0.0",
+  "description": "Daily Blacklist Monitoring and Email Report Engine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test:manual": "node server.js --test"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^8.0.5"
+  },
+  "keywords": [
+    "blacklist",
+    "security",
+    "monitoring",
+    "ip",
+    "domain"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,6 @@
+[
+  { "target": "8.8.8.8",       "type": "ip",     "label": "Google DNS"         },
+  { "target": "1.1.1.1",       "type": "ip",     "label": "Cloudflare DNS"     },
+  { "target": "example.com",   "type": "domain",  "label": "Example Website"   },
+  { "target": "google.com",    "type": "domain",  "label": "Google"            }
+]
